@@ -13,20 +13,22 @@
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 #define SERVO_INITIAL_ANGLE 0 // angulo inicial do Servo
-#define SERVO_FINAL_ANGLE 90  // angulo final do Servo
+#define SERVO_FINAL_ANGLE 180  // angulo final do Servo
 #define THRESHOLD 0.3 // porcentagem de queda relativa ao apogeu para abertura do paraquedas
 
 Adafruit_BME280 bme;
 File dataFile;
 
+float alturaInicial;
 float alturaAtual;
 float apogeu = 0.0;
 Servo s;
+bool paraquedasAcionado = false;
 
 void setup() {
   SD.begin(SD_PORT);
   dataFile = SD.open("data.txt", FILE_WRITE);
-
+  dataFile.println("//inicio do log");
   s.attach(SERVO_PORT);
   s.write(SERVO_INITIAL_ANGLE);
 
@@ -35,6 +37,7 @@ void setup() {
     while (1);
   }
 
+  alturaInicial = bme.readAltitude(SEALEVELPRESSURE_HPA);
 }
 
 
@@ -45,7 +48,7 @@ void loop() {
     apogeu = alturaAtual;
   }
   else {
-    if (apogeu - alturaAtual > THRESHOLD * apogeu ) {
+    if ((alturaAtual > 1.0 * alturaInicial) && (apogeu - alturaAtual > THRESHOLD * apogeu) && !paraquedasAcionado) {
       acionarParaquedas();
     }
   }
@@ -57,7 +60,6 @@ void loop() {
 void acionarParaquedas() {
   String str = "//paraquedas acionado a: " + String(alturaAtual,2);
   dataFile.println(str);
-  for(int ang=SERVO_INITIAL_ANGLE; ang<SERVO_FINAL_ANGLE; ang++){
-    s.write(ang);
-  }
+  s.write(SERVO_FINAL_ANGLE);
+  paraquedasAcionado = true;
 }
