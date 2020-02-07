@@ -13,7 +13,7 @@
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 #define SERVO_INITIAL_ANGLE 0 // angulo inicial do Servo
-#define SERVO_FINAL_ANGLE 180  // angulo final do Servo
+#define SERVO_FINAL_ANGLE 10  // angulo final do Servo
 #define THRESHOLD 0.3 // porcentagem de queda relativa ao apogeu para abertura do paraquedas
 
 Adafruit_BME280 bme;
@@ -27,13 +27,15 @@ bool paraquedasAcionado = false;
 
 void setup() {
   SD.begin(SD_PORT);
-  dataFile = SD.open("data.txt", FILE_WRITE);
-  dataFile.println("//inicio do log");
+  Serial.begin(9600);
+  if(SD.exists("data.txt"))
+    SD.remove("data.txt");
+  
+  logMessage("//inicio do log");
   s.attach(SERVO_PORT);
-  s.write(SERVO_INITIAL_ANGLE);
 
   if (!bme.begin(0x76)) {
-    dataFile.println("//nao foi encontrado um sensor BME280 valido, cheque as conexoes!");
+    logMessage("//nao foi encontrado um sensor BME280 valido, cheque as conexoes!");
     while (1);
   }
 
@@ -43,23 +45,29 @@ void setup() {
 
 void loop() {
   alturaAtual = bme.readAltitude(SEALEVELPRESSURE_HPA);
-
+  Serial.println(bme.readAltitude(SEALEVELPRESSURE_HPA));
   if (alturaAtual > apogeu) {
     apogeu = alturaAtual;
   }
   else {
-    if ((alturaAtual > 1.0 * alturaInicial) && (apogeu - alturaAtual > THRESHOLD * apogeu) && !paraquedasAcionado) {
+    if ((apogeu - alturaAtual > THRESHOLD * apogeu) && !paraquedasAcionado) {
       acionarParaquedas();
     }
   }
-
-  dataFile.println(alturaAtual);
+  logMessage(String(alturaAtual,2));
   delay(100);
 }
 
 void acionarParaquedas() {
   String str = "//paraquedas acionado a: " + String(alturaAtual,2);
-  dataFile.println(str);
-  s.write(SERVO_FINAL_ANGLE);
+  logMessage(str);
+  for(int i = 0; i < SERVO_FINAL_ANGLE; i++)
+    s.write(i);
   paraquedasAcionado = true;
+}
+
+void logMessage(String str){
+  dataFile = SD.open("data.txt", FILE_WRITE);
+  dataFile.println(str);
+  dataFile.close();  
 }
