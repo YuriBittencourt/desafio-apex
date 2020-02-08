@@ -62,6 +62,8 @@ void acionarParaquedas() {
   logMessage(str);
   s.write(SERVO_FINAL_ANGLE);
   paraquedasAcionado = true;
+  delay(1000);
+  s.write(SERVO_INITAL_ANGLE);
 }
 
 void logMessage(String str){
