@@ -19,11 +19,10 @@
 Adafruit_BME280 bme;
 File dataFile;
 
-float alturaInicial;
-float alturaAtual;
-float apogeu = 0.0;
+float actualHeight;
+float apogee = 0.0;
 Servo s;
-bool paraquedasAcionado = false;
+bool parachuteTriggered = false;
 
 void setup() {
   SD.begin(SD_PORT);
@@ -39,29 +38,29 @@ void setup() {
     while (1);
   }
 
-  alturaInicial = bme.readAltitude(SEALEVELPRESSURE_HPA);
+  actualHeight = bme.readAltitude(SEALEVELPRESSURE_HPA);
 }
 
 
 void loop() {
-  alturaAtual = bme.readAltitude(SEALEVELPRESSURE_HPA);
-  if (alturaAtual > apogeu) {
-    apogeu = alturaAtual;
+  actualHeight = bme.readAltitude(SEALEVELPRESSURE_HPA);
+  if (actualHeight > apogee) {
+    apogee = actualHeight;
   }
   else {
-    if ((apogeu - alturaAtual > THRESHOLD * apogeu) && !paraquedasAcionado) {
-      acionarParaquedas();
+    if ((apogee - actualHeight > THRESHOLD * apogee) && !parachuteTriggered) {
+      triggerParachute();
     }
   }
-  logMessage(String(alturaAtual,2));
+  logMessage(String(actualHeight,2));
   delay(100);
 }
 
-void acionarParaquedas() {
-  String str = "//paraquedas acionado a: " + String(alturaAtual,2);
+void triggerParachute() {
+  String str = "//paraquedas acionado a: " + String(actualHeight,2);
   logMessage(str);
   s.write(SERVO_FINAL_ANGLE);
-  paraquedasAcionado = true;
+  parachuteTriggered = true;
   delay(1000);
   s.write(SERVO_INITAL_ANGLE);
 }
